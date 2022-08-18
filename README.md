@@ -7,7 +7,7 @@ We want to put different group content in different sub-feeds, in order to suppo
 
 But we need have a clear way to discover how you've been invited to a group without replicating the whole group's data.
 
-We also need to consider how to ensure our group data is replicated _enough_ - e.g. if a group is just me and my sister, then are there gonna be enough copies of the group data to be resilent/ timely.
+We also need to consider how to ensure our group data is replicated _enough_. For example, if a group is just me and my sister, then are there gonna be enough copies of the group data? If there are too few copies of the data, there's little or no gossip propagation, and can only get updates from my sister when we are directly connected.
 
 
 ## Principles
