@@ -13,7 +13,7 @@ We also need to consider how to ensure our group data is replicated _enough_. Fo
 ## Principles
 
 1. **Group membership should be opaque**
-   - you shouldn't be able to guess who is in a group using public info
+   - You shouldn't be able to guess who is in a group using public info, such as:
      - shards people are using
      - groupId (e.g. %a2148bs2K3klmhnaALsdaN90=.cloaked)
 2. **we support sympathetic replication**
