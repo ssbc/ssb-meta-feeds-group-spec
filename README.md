@@ -15,8 +15,10 @@ We also need to consider how to ensure our group data is replicated _enough_. Fo
 1. **Group membership should be opaque**
    - You shouldn't be able to guess who is in a group using public info, such as:
      - Shard feeds
-     - groupId (e.g. %a2148bs2K3klmhnaALsdaN90=.cloaked)
-2. **we support sympathetic replication**
+     - `groupId` as a "cloaked message ID"
+2. **Peers should replicate sympathetically**
+  - If a friend has a subfeed dedicated to a group, but I don't belong to that group, it is RECOMMENDED that I replicate that subfeed
+  - May be randomized or subject to sympathy-related parameters
 
 
 
@@ -36,13 +38,13 @@ root(root)
 v1(v1)
 5(5) & b(b) & f(f)
 group-invite(group-invite):::groupInvite
-denmark(denmark):::group
+aalborg(aalborg):::group
 helsinki(helsinki):::group
 wellington(wellington):::group
 
 root --> v1 --> 5 --> helsinki
          v1 --> b --> group-invite
-         v1 --> f --> denmark
+         v1 --> f --> aalborg
                 f --> wellington
 
 classDef default stroke:none;
@@ -53,13 +55,13 @@ _Diagram showing an example layout of group-related feeds. Note that the shards 
 use-case will likely not be those shown, see how they are determined below._
 
 
-### the group-invite feed
+### The invitations feed
 
 This feed holds messages which help peers join groups (e.g. `group/registration`, `group/add-member` messages).
 This feed MUST be unique for each peer (a singleton).
-Each peer MUST replicate this feed from each of their peers (OR each peer they might possibly enter a group with).
+Each peer A who replicates the root metafeed of another B SHOULD also replicate B's invitation feed. 
 
-For each peer, this feed MUST be located on the meta-feed tree at:
+The invitations feed MUST be a direct subfeed of a shard feed, where the shard is derived using the string `"invitations"`. The invitations feed MUST be declared on the shard feed with `feedpurpose` equal to `"invitations"`.
 ```
 /v1/:shard/group-invite
 ```
@@ -74,9 +76,9 @@ See [ssb-meta-feeds-spec] for detail about the `v1` shared and the `shard` calcu
 All content on this feed SHOULD be encrypted with box2 encryption.
 
 
-### group feeds
+### Group feeds
 
-Group feeds MUST be located on the meta-feed tree at:
+Each group feeds MUST be a direct subfeed of a shard feed, where the shard is derived using the `groupKey` encoded in BFE. A group feed MUST be declared on the shard feed with `feedpurpose` equal to the `groupKey` encoded as an SSB URI string.
 
 ```
 /v1/:shard/:groupKey
@@ -112,12 +114,12 @@ Where:
 ### 1. Creating a group
 
 Staltz starts up his application.
-We assume he has already created his `group-invite` feed (following the spec above).
+We assume he has already created his `invitations` feed (following the spec above).
 In his application he creates a new "helsinki" group, which means he:
-1. creates a new symmetric `groupKey`
-2. create a content feed under a new shard (using the `groupKey` following the spec above)
-3. publishes an encrypted `group/init` message to that new "helsinki" feed
-4. publishes an encrypted `group/add-member` message to his "group-invite" feed
+1. Creates a new symmetric `groupKey`
+2. Creates a content feed under a new shard (using the `groupKey` following the spec above)
+3. Publishes a box2-encrypted `group/init` message on that new "helsinki" content feed
+4. Publishes a box2-encrypted `group/add-member` message on his "invitations" feed
       <details>
         <summary>details</summary>
         <div>
@@ -132,25 +134,25 @@ root(root)
 v1(v1)
 4(4)
 d(d)
-group-invite(group-invite):::groupInvite
+invitations(invitations):::invitationsClass
 helsinki(helsinki):::group
 
 subgraph Staltz
   root --> v1 --> 4 --> helsinki
-           v1 --> d --> group-invite
+           v1 --> d --> invitations
 end
 
 classDef default stroke:none;
-classDef groupInvite fill: #BF2669, stroke:none, color:white;
+classDef invitationsClass fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 ```
 _Diagram showing Staltz feed state from his perspective_
 
 ### 2. Group creator invites someone
 
-Staltz wants to invite his friend Arj to the group he set up, so he publishes a `group/add-member` message (which conatins the `groupKey`) to his "group-invite" feed.
+Staltz wants to invite his friend Arj to the group he set up, so he publishes a `group/add-member` message (which contains the `groupKey`) on his "invitations" feed.
 
-When Arj next stats up his application and replicates Staltz's feed (they are friends) he discovers the new `group/add-member` for him Staltz's "group-invite" feed (peers MUST replicate friends group-invite feeds).
+When Arj next starts up his application and replicates Staltz's feed tree (they are friends), he discovers the new `group/add-member` for him on Staltz's "invitations" feed (because peers must replicate their friends' "invitations" feeds).
 
 ```mermaid
 graph TB
@@ -159,35 +161,34 @@ rootA(root)
 v1A(v1)
 4A(4):::unreplicated
 dA(d)
-group-inviteA(group-invite):::groupInvite
+invitationsA(invitations):::invitationsClass
 helsinkiA(helsinki):::unreplicated
 
 rootB(root)
 v1B(v1)
 9B(9)
-group-inviteB(group-invite):::groupInvite
+invitationsB(invitations):::invitationsClass
 
 subgraph Staltz
   rootA --> v1A --> 4A --> helsinkiA
-            v1A --> dA --> group-inviteA
+            v1A --> dA --> invitationsA
 end
 
 subgraph Arj
-  rootB --> v1B --> 9B --> group-inviteB
+  rootB --> v1B --> 9B --> invitationsB
 end
 
 classDef default stroke:none;
-classDef groupInvite fill: #BF2669, stroke:none, color:white;
+classDef invitationsClass fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 classDef unreplicated opacity: 0.4, stroke: none;
 ```
-_Diagram showing feed state of Arj and Staltz from Arj's perspective. The greyed out feeds show feeds that exist for Staltz but which Arj has yet to want to replicate_
+_Diagram showing feed state of Arj and Staltz from Arj's perspective. The greyed out feeds show feeds that exist for Staltz but which Arj has yet to want to replicate._
 
 
-Assuming he accepts this invitation Arj then does the following:
-1. calculates the path to the "helsinki" group for staltz, and starts replicating it
-    - in this example `@statlz/v1/4/helsinki` (where "helsinki" is derived from the `groupKey`)
-2. creates a helsinki feed for themself
+Assuming he accepts this invitation, Arj then does the following:
+1. Calculates the shard for the "helsinki" group for staltz, and starts replicating that shard feed and the "helsinki" feed
+2. Creates a "helsinki" feed for himself
 
 
 ```mermaid
@@ -196,34 +197,33 @@ graph TB
 rootA(root)
 v1A(v1)
 4A(4) & dA(d)
-group-inviteA(group-invite):::groupInvite
+invitationsA(invitations):::invitationsClass
 helsinkiA(helsinki):::group
 
 rootB(root)
 v1B(v1)
 9B(9) & cB(c)
-group-inviteB(group-invite):::groupInvite
+invitationsB(invitations):::invitationsClass
 helsinkiB(helsinki):::group
 
 subgraph Staltz
   rootA --> v1A --> 4A --> helsinkiA
-            v1A --> dA --> group-inviteA
+            v1A --> dA --> invitationsA
 end
 
 subgraph Arj
-  rootB --> v1B --> 9B --> group-inviteB
+  rootB --> v1B --> 9B --> invitationsB
             v1B --> cB --> helsinkiB
 end
 
 classDef default stroke:none;
-classDef groupInvite fill: #BF2669, stroke:none, color:white;
+classDef invitationsClass fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 ```
 
-_Diagram showing updated state for Arj after he joins the group. Note the shards each feed lands in are random (but deterministic if you know the `groupKey`)_
+ _Diagram showing the updated state for Arj after he joins the group. Note the shards each feed lands in are different for each person (but deterministic if you know the `groupKey`)._
 
-Staltz can see that Arj has accepted the invitation because he is able to decrypt the feed-announce message for Arj's "helsinki" feed, and read that the purpose is the `groupKey`.
-(He also knows where to watch for such a feed to be announced because the shared is deterministiclly chosen.)
+Staltz can see that Arj has accepted the invitation because he is able to decrypt the feed announcement message for Arj's "helsinki" feed on the shard feed, and read that the `feedpurpose` is the `groupKey`. Staltz knows which shard feed to watch for the announcement, because Arj's shard feed is deterministically determined with information Staltz is aware of.
 
 ### 3. Non-group creator invites someone
 
@@ -244,8 +244,6 @@ Staltz see Arj has invited Mix because he's replicating Arj's "group-invite" fee
 
 ## Questions
 
-1. if people in a group see that "mix was added" they are all going to start asking to replicate the feed "pathToMixsGroupFeed". On a network level this will cast a shadow revealing group members....
-    - possible soluton: raise sympathetic replication for obfuscation
 2. same problem as (1) exists when people join a group - they're going to start all asking for the same pattern of feeds (e.g. "can I have staltz/v1/d4/helsinki and arj/v1/c/helsinki"). It's like a fingerprint...
 
 ---
