@@ -7,7 +7,9 @@ We want to put different group content in different sub-feeds, in order to suppo
 
 But we need have a clear way to discover how you've been invited to a group without replicating the whole group's data.
 
-We also need to consider how to ensure our group data is replicated _enough_. For example, if a group is just me and my sister, then are there gonna be enough copies of the group data? If there are too few copies of the data, there's little or no gossip propagation, and can only get updates from my sister when we are directly connected.
+We also need to consider how to ensure our group data is replicated _enough_. For example, if a group is just me and
+my sister, then are there gonna be enough copies of the group data? If there are too few copies of the data, there's
+little or no gossip propagation, and can only get updates from my sister when we are directly connected.
 
 
 ## Principles
@@ -57,18 +59,21 @@ use-case will likely not be those shown, see how they are determined below._
 
 ### The invitations feed
 
-This feed holds messages which help peers join groups (e.g. `group/registration`, `group/add-member` messages).
+This feed holds messages which help peers join groups (e.g. `group/add-member`, `group/registration` messages).
 This feed MUST be unique for each peer (a singleton).
 Each peer A who replicates the root metafeed of another B SHOULD also replicate B's invitation feed. 
 
-The invitations feed MUST be a direct subfeed of a shard feed, where the shard is derived using the string `"invitations"`. The invitations feed MUST be declared on the shard feed with `feedpurpose` equal to `"invitations"`.
+The invitations feed MUST be a direct subfeed of a shard feed, where the shard is derived using the string `"invitations"`.
+The `metafeeds/announce/add` message announcing the invitations feed MUST have `feedpurpose` equal to `"invitations"`,
+and MUST NOT be encrypted.
+
 ```
-/v1/:shard/group-invite
+/v1/:shard/invitations
 ```
 Where:
-- `:shard` is the shard feed derived using the string `"group-invite"`
-- `group-invite` is a content feed with
-    - `feedpurpose = "group-invite"`
+- `:shard` is the shard feed derived using the string `"invitations"`
+- `:invitations` is a content feed with
+    - `feedpurpose = "invitations"`
     - `feedtype = ?` :warning:
 
 See [ssb-meta-feeds-spec] for detail about the `v1` shared and the `shard` calculation.
@@ -78,33 +83,34 @@ All content on this feed SHOULD be encrypted with box2 encryption.
 
 ### Group feeds
 
-Each group feeds MUST be a direct subfeed of a shard feed, where the shard is derived using the `groupKey` encoded in BFE. A group feed MUST be declared on the shard feed with `feedpurpose` equal to the `groupKey` encoded as an SSB URI string.
+Each group feeds MUST be a direct subfeed of a shard feed, where the shard is derived using the base64 encoded group `secret`.
+A group feed MUST be declared on the shard feed with `feedpurpose` equal to the same base64 encoded group `secret`.
 
 ```
-/v1/:shard/:groupKey
+/v1/:shard/:group
 ```
 Where:
-- `:shard` is the shard feed derived using BFE encoded `groupKey`
+- `:shard` is the shard feed derived using the base64 encoded group `secret`
     <details>
       <summary>details</summary>
       <div>
-        We cannot use the `groupId`, as this is publicly known, which would give attackers a way to test if people are in the group (breaking Principle 1.)
+        We cannot use the group `id`, as this is publicly known, which would give attackers a way to test if people are in the group (breaking Principle 1.)
         <br />
-        We choose the the `groupKey` because it is a value known only to those already in the group.
+        We choose the the group `secret` because it is a value known only to those already in the group.
       </div>
     </details>
-- `:groupKey` is a content feed where
-    - `feedpurpose = groupKey` where `groupKey` is the ssb-uri encoded groupKey for the group
-    - `feedtype = ?` :warning:
-    - the announcement of the this sub-feed MUST be encrypted with this group's `groupKey`
+- `:group` is a content feed where
+    - `feedpurpose = secret` where `secret` is the base64 encoded group secret
+    - `feedtype = classic`
+    - the announcement of the this sub-feed MUST be encrypted with this group's `secret`
       <details>
         <summary>details</summary>
         <div>
-          We need a `feedpurpose` which is unique to the group, which the `groupKey` is.
-          We cannot use the `groupId`, because this is derived using the group init message, which does not exist until our feed exists.
-          We encrypt this announce message so as not to leak the groupKey AND to protect group membership.
+          We need a `feedpurpose` which is unique to the group, which the group `secret` is.
+          We cannot use the group `id`, because this is derived using the group init message, which does not exist until our feed exists.
+          We encrypt this announce message so as not to leak the `secret` AND to protect group membership.
           <br />
-          For sympathetic replication we will therefor need a distinct type of announce message (TODO)
+          For sympathetic replication we will therefore need a distinct type of announce message (TODO)
         </div>
       </details>
 
@@ -150,9 +156,12 @@ _Diagram showing Staltz feed state from his perspective_
 
 ### 2. Group creator invites someone
 
-Staltz wants to invite his friend Arj to the group he set up, so he publishes a `group/add-member` message (which contains the `groupKey`) on his "invitations" feed.
+Staltz wants to invite his friend Arj to the group he set up, so he publishes a `group/add-member` message
+(which contains the group `secret`) on his "invitations" feed.
 
-When Arj next starts up his application and replicates Staltz's feed tree (they are friends), he discovers the new `group/add-member` for him on Staltz's "invitations" feed (because peers must replicate their friends' "invitations" feeds).
+When Arj next starts up his application and replicates Staltz's feed tree (they are friends), he discovers
+the new `group/add-member` for him on Staltz's "invitations" feed (because peers must replicate their friends'
+"invitations" feeds).
 
 ```mermaid
 graph TB
@@ -183,7 +192,8 @@ classDef invitationsClass fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 classDef unreplicated opacity: 0.4, stroke: none;
 ```
-_Diagram showing feed state of Arj and Staltz from Arj's perspective. The greyed out feeds show feeds that exist for Staltz but which Arj has yet to want to replicate._
+_Diagram showing feed state of Arj and Staltz from Arj's perspective. The greyed out feeds show feeds that exist
+for Staltz but which Arj has yet to want to replicate._
 
 
 Assuming he accepts this invitation, Arj then does the following:
@@ -221,9 +231,13 @@ classDef invitationsClass fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 ```
 
- _Diagram showing the updated state for Arj after he joins the group. Note the shards each feed lands in are different for each person (but deterministic if you know the `groupKey`)._
+ _Diagram showing the updated state for Arj after he joins the group. Note the shards each feed lands in are
+ different for each person (but deterministic if you know the `groupKey`)._
 
-Staltz can see that Arj has accepted the invitation because he is able to decrypt the feed announcement message for Arj's "helsinki" feed on the shard feed, and read that the `feedpurpose` is the `groupKey`. Staltz knows which shard feed to watch for the announcement, because Arj's shard feed is deterministically determined with information Staltz is aware of.
+Staltz can see that Arj has accepted the invitation because he is able to decrypt the feed announcement 
+message for Arj's "helsinki" feed on the shard feed, and read that the `feedpurpose` is the `groupKey`.
+Staltz knows which shard feed to watch for the announcement, because Arj's shard feed is deterministically
+derived with information Staltz is aware of.
 
 ### 3. Non-group creator invites someone
 
@@ -244,7 +258,8 @@ Staltz see Arj has invited Mix because he's replicating Arj's "group-invite" fee
 
 ## Questions
 
-2. same problem as (1) exists when people join a group - they're going to start all asking for the same pattern of feeds (e.g. "can I have staltz/v1/d4/helsinki and arj/v1/c/helsinki"). It's like a fingerprint...
+2. same problem as (1) exists when people join a group - they're going to start all asking for the same pattern
+of feeds (e.g. "can I have staltz/v1/d4/helsinki and arj/v1/c/helsinki"). It's like a fingerprint...
 
 ---
 
