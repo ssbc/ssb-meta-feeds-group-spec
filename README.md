@@ -23,7 +23,6 @@ little or no gossip propagation, and can only get updates from my sister when we
   - May be randomized or subject to sympathy-related parameters
 
 
-
 ## Spec
 
 This work builds on the [ssb-meta-feeds-spec] (v1).
@@ -83,8 +82,9 @@ All content on this feed SHOULD be encrypted with box2 encryption.
 
 ### Group feeds
 
-Each group feeds MUST be a direct subfeed of a shard feed, where the shard is derived using the base64 encoded group `secret`.
+Each group feed MUST be a direct subfeed of a shard feed, where the shard is derived using the base64 encoded group `secret`.
 A group feed MUST be declared on the shard feed with `feedpurpose` equal to the same base64 encoded group `secret`.
+This message MUST be encrypted (with the group secret).
 
 ```
 /v1/:shard/:group
