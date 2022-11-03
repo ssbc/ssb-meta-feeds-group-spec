@@ -110,7 +110,7 @@ Where:
           We cannot use the group `id`, because this is derived using the group init message, which does not exist until our feed exists.
           We encrypt this announce message so as not to leak the `secret` AND to protect group membership.
           <br />
-          For sympathetic replication we will therefore need a distinct type of announce message (TODO)
+          For sympathetic replication, there MUST be a `metafeed/add/existing` published *unencrypted* on the shard feed, announcing this group feed. This message MUST be published after the *encrypted* `metafeed/add/derived` message on the shard feed. 
         </div>
       </details>
 
