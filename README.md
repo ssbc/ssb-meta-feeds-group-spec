@@ -73,7 +73,7 @@ Where:
 - `:shard` is the shard feed derived using the string `"invitations"`
 - `:invitations` is a content feed with
     - `feedpurpose = "invitations"`
-    - `feedtype = ?` :warning:
+    - `feedFormat = classic`
 
 See [ssb-meta-feeds-spec] for detail about the `v1` shared and the `shard` calculation.
 
@@ -101,7 +101,7 @@ Where:
     </details>
 - `:group` is a content feed where
     - `feedpurpose = secret` where `secret` is the base64 encoded group secret
-    - `feedtype = classic`
+    - `feedFormat = classic`
     - the announcement of the this sub-feed MUST be encrypted with this group's `secret`
       <details>
         <summary>details</summary>
