@@ -1,4 +1,16 @@
+<!--
+SPDX-FileCopyrightText: 2022 Mix Irving
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # ssb-meta-feed-group-spec
+
+Version: 1.0
+
+Author: Mix Irving <whimful@gmail.com>
+
+License: This work is licensed under a Creative Commons Attribution 4.0 International License.
 
 ## Abstract
 
