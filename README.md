@@ -1,16 +1,28 @@
 # ssb-meta-feed-group-spec
-_working title_
 
-## Problem
+## Abstract
 
-We want to put different group content in different sub-feeds, in order to support more partial replication.
+In order to support partial replication, it is desireable to put different 
+group content in different subfeeds. However, we need to have a clear way to 
+discover how you've been invited to a group, without replicating the whole 
+group's content. We also need to consider how to ensure our group data is 
+replicated _enough_ so it's readily available for anyone who needs access to 
+it. For example, if a group contains only three people, and if only two people
+have copies of the group data, then there's little or no gossip propagation, 
+and the third member can only get updates when it is directly connected one of 
+the other two members. Thus we need to enable *sympathetic replication*, such 
+that peers who don't strictly need the group content are incentivized to 
+replicate it anyway.
 
-But we need have a clear way to discover how you've been invited to a group without replicating the whole group's data.
+This document specifies how group content is organized in a metafeed tree, what
+data must be encrypted and to whom, and how peers replicate group-related 
+portions of the tree.
 
-We also need to consider how to ensure our group data is replicated _enough_. For example, if a group is just me and
-my sister, then are there gonna be enough copies of the group data? If there are too few copies of the data, there's
-little or no gossip propagation, and can only get updates from my sister when we are directly connected.
+## Terminology
 
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", 
+"SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be 
+interpreted as described in [RFC 2119](https://tools.ietf.org/html/rfc2119).
 
 ## Principles
 
@@ -19,18 +31,17 @@ little or no gossip propagation, and can only get updates from my sister when we
      - Shard feeds
      - `groupId` as a "cloaked message ID"
 2. **Peers should replicate sympathetically**
-  - If a friend has a subfeed dedicated to a group, but I don't belong to that group, it is RECOMMENDED that I replicate that subfeed
-  - May be randomized or subject to sympathy-related parameters
+   - If a friend has a subfeed dedicated to a group, but I don't belong to that group, it is RECOMMENDED that I replicate that subfeed
+   - May be randomized or subject to sympathy-related parameters
 
 
-## Spec
+## Specification
 
 This work builds on the [ssb-meta-feeds-spec] (v1).
 
 We define two types of feeds that each peer will have:
-1. <div class='group-invite'></div> the group-invite feed
-2. <div class='group'></div>        group feeds
-
+1. An `invitations` feed
+2. A "group feed" for each group
 
 ```mermaid
 graph TB
@@ -38,13 +49,13 @@ graph TB
 root(root)
 v1(v1)
 5(5) & b(b) & f(f)
-group-invite(group-invite):::groupInvite
+invitations(invitations):::groupInvite
 aalborg(aalborg):::group
 helsinki(helsinki):::group
 wellington(wellington):::group
 
 root --> v1 --> 5 --> helsinki
-         v1 --> b --> group-invite
+         v1 --> b --> invitations
          v1 --> f --> aalborg
                 f --> wellington
 
@@ -63,56 +74,49 @@ This feed MUST be unique for each peer (a singleton).
 Each peer A who replicates the root metafeed of another B SHOULD also replicate B's invitation feed. 
 
 The invitations feed MUST be a direct subfeed of a shard feed, where the shard is derived using the string `"invitations"`.
-The `metafeeds/announce/add` message announcing the invitations feed MUST have `feedpurpose` equal to `"invitations"`,
-and MUST NOT be encrypted.
+The `metafeeds/add/derived` message announcing the invitations feed MUST have `feedpurpose` equal to `"invitations"`,
+and MUST NOT be encrypted. The feed format for the invitations feed MUST be `classic`.
 
-```
-/v1/:shard/invitations
-```
-Where:
-- `:shard` is the shard feed derived using the string `"invitations"`
-- `:invitations` is a content feed with
-    - `feedpurpose = "invitations"`
-    - `feedFormat = classic`
+The shard feed containing the invitations feed MUST be derived from the string `invitations` according to the 
+v1 tree structure specified in [ssb-meta-feeds-spec].
 
-See [ssb-meta-feeds-spec] for detail about the `v1` shared and the `shard` calculation.
-
-All content on this feed SHOULD be encrypted with box2 encryption.
-
+All content on the invitations feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
 
 ### Group feeds
 
-Each group feed MUST be a direct subfeed of a shard feed, where the shard is derived using the base64 encoded group `secret`.
-A group feed MUST be declared on the shard feed with `feedpurpose` equal to the same base64 encoded group `secret`.
-This message MUST be encrypted (with the group secret).
+Each group feed MUST be a direct subfeed of a shard feed, where the shard is derived using the base64 encoded 
+group secret (which has 32 bytes of entropy). When the group feed is declared on the shard feed, the 
+`metafeed/add/derived` message MUST have the field `feedpurpose` equal to the same base64 encoded group secret.
+This message MUST be encrypted with the group secret following the [box2] method.
 
-```
-/v1/:shard/:group
-```
-Where:
-- `:shard` is the shard feed derived using the base64 encoded group `secret`
-    <details>
-      <summary>details</summary>
-      <div>
-        We cannot use the group `id`, as this is publicly known, which would give attackers a way to test if people are in the group (breaking Principle 1.)
-        <br />
-        We choose the the group `secret` because it is a value known only to those already in the group.
-      </div>
-    </details>
-- `:group` is a content feed where
-    - `feedpurpose = secret` where `secret` is the base64 encoded group secret
-    - `feedFormat = classic`
-    - the announcement of the this sub-feed MUST be encrypted with this group's `secret`
-      <details>
-        <summary>details</summary>
-        <div>
-          We need a `feedpurpose` which is unique to the group, which the group `secret` is.
-          We cannot use the group `id`, because this is derived using the group init message, which does not exist until our feed exists.
-          We encrypt this announce message so as not to leak the `secret` AND to protect group membership.
-          <br />
-          For sympathetic replication we will therefore need a distinct type of announce message (TODO)
-        </div>
-      </details>
+
+<details>
+  <summary>Details about the shard feed</summary>
+  <div>
+The shard feed is derived by the base64 encoded group secret.
+
+We cannot use the group `id`, as this is publicly known, which would give attackers a way to test if people are in the group (breaking Principle 1.)
+
+We choose the the group `secret` because it is a value known only to those already in the group.
+  </div>
+</details>
+    
+<details>
+  <summary>Details about the group feed</summary>
+  <div>
+
+* `feedpurpose = secret` where `secret` is the base64 encoded group secret
+* `feedFormat = classic`
+* The `metafeed/add/derived` message on the shard feed MUST be encrypted with this group's secret
+
+We need a `feedpurpose` which is unique to the group, which the group secret is.
+
+We cannot use the group `id`, because this is derived using the group init message, which does not exist until our feed exists.
+We encrypt this announce message so as not to leak the `secret` AND to protect group membership.
+
+For sympathetic replication we will therefore need a distinct type of announce message (TODO)
+  </div>
+</details>
 
 
 ## Flows
@@ -122,8 +126,8 @@ Where:
 Staltz starts up his application.
 We assume he has already created his `invitations` feed (following the spec above).
 In his application he creates a new "helsinki" group, which means he:
-1. Creates a new symmetric `groupKey`
-2. Creates a content feed under a new shard (using the `groupKey` following the spec above)
+1. Creates a new symmetric `groupKey`, also known as "group secret"
+2. Creates a content feed under some shard (using the `groupKey` following the spec above)
 3. Publishes a box2-encrypted `group/init` message on that new "helsinki" content feed
 4. Publishes a box2-encrypted `group/add-member` message on his "invitations" feed
       <details>
@@ -244,58 +248,11 @@ derived with information Staltz is aware of.
 Arj now wants to invite Mix to the "helsinki" group. He follows the same pattern as in (2), but now as the inviter.
 
 Mix knows Arj is a part of the group because he was invited by them.
-Mix also knows staltz is part of the group because all `group/add-member` messages have
-```
-recps: [groupId, groupCreatorId, ...inviteeIds]
-```
-_As long as we know the creator we can always re-follow the chain of group-additions._
+Mix also knows Staltz is part of the group because all `group/add-member` messages have
 
-:fire: TODO - we need to write the group spec up with these changes clearly somewhere.
-
-Staltz see Arj has invited Mix because he's replicating Arj's "group-invite" feed, so Statlz starts replicating Mix.
-
-
-
-## Questions
-
-2. same problem as (1) exists when people join a group - they're going to start all asking for the same pattern
-of feeds (e.g. "can I have staltz/v1/d4/helsinki and arj/v1/c/helsinki"). It's like a fingerprint...
-
----
-
-Existing work to be ported in:
-1. [2022-06-02 meeting](./2022-06-02-notes.md) - has good steps for how discovery works
-2. [2022-07-06 meeting](./2022-07-06-notes.md)
-
-
-
+Staltz can see Arj has invited Mix because he's replicating Arj's "invitations" feed, so Staltz starts replicating Mix's group feed.
 
 <!-- References -->
+
 [ssb-meta-feeds-spec]: https://github.com/ssbc/ssb-meta-feeds-spec
-
-
-
-<!-- CSS -->
-<style>
-  .group-invite, .group {
-    display: inline-block;
-    width: 14px;
-    height: 14px;
-    border-radius: 2px;
-  }
-  .group-invite { background: #BF2669; }
-  .group { background: #702A8C; }
-
-  details > summary {
-    color: grey;
-    font-size: 12px
-  }
-  details > div {
-    font-style: italic;
-    background: #eee;
-
-    padding: 14px 10px;
-    border-left: 3px solid #999;
-    margin-left: 10px;
-  }
-</style>
+[box2]: https://github.com/ssbc/envelope-spec/
