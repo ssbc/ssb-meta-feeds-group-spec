@@ -14,17 +14,23 @@ License: This work is licensed under a Creative Commons Attribution 4.0 Internat
 
 ## Abstract
 
-In order to support partial replication, it is desireable to put different 
-group content in different subfeeds. However, we need to have a clear way to 
-discover how you've been invited to a group, without replicating the whole 
-group's content. We also need to consider how to ensure our group data is 
-replicated _enough_ so it's readily available for anyone who needs access to 
-it. For example, if a group contains only three people, and if only two people
-have copies of the group data, then there's little or no gossip propagation, 
-and the third member can only get updates when it is directly connected one of 
-the other two members. Thus we need to enable *sympathetic replication*, such 
-that peers who don't strictly need the group content are incentivized to 
-replicate it anyway.
+With the introduction of groups, there will be a lot more content that is not publicly accessible.
+This could cause onboarding and storage problems.
+
+## Solution: Groups in sub-feeds
+
+If we put each group's content in a different sub-feed, then peers can fetch only the sub-feeds
+which are relevant to them. i.e. If you're not part of a group, you can choose not to replicate it!
+(Metafeeds is one way we can support "partial replication".)
+
+## New Problems
+
+Hosting groups on their own sub-feeds introduces new problems:
+- how do I know if I've been invited to a group (which feed are invites in)
+- once I'm invited to a group, how do I know which sub-feed to publish to?
+- if peers only replicate groups they're in, will there be enough _gossip_ to sustain discourse?
+  - e.g. in the extreme case where a group is just me and a friend using only ssb-room tunnels, updates will only propogate if both my and my friend are online at the same time ):
+  - _see : "sympathetic replication"_
 
 This document specifies how group content is organized in a metafeed tree, what
 data must be encrypted and to whom, and how peers replicate group-related 
@@ -39,9 +45,9 @@ interpreted as described in [RFC 2119](https://tools.ietf.org/html/rfc2119).
 ## Principles
 
 1. **Group membership should be opaque**
-   - You shouldn't be able to guess who is in a group using public info, such as:
-     - Shard feeds
-     - `groupId` as a "cloaked message ID"
+  - You shouldn't be able to guess who is in a group using public info, such as:
+    - shard feeds
+    - `groupId` (as ssb-uri)
 2. **Peers should replicate sympathetically**
    - If a friend has a subfeed dedicated to a group, but I don't belong to that group, it is RECOMMENDED that I replicate that subfeed
    - May be randomized or subject to sympathy-related parameters
@@ -61,7 +67,7 @@ graph TB
 root(root)
 v1(v1)
 5(5) & b(b) & f(f)
-invitations(invitations):::groupInvite
+invitations(invitations):::invitations
 aalborg(aalborg):::group
 helsinki(helsinki):::group
 wellington(wellington):::group
@@ -72,30 +78,38 @@ root --> v1 --> 5 --> helsinki
                 f --> wellington
 
 classDef default stroke:none;
-classDef groupInvite fill: #BF2669, stroke:none, color:white;
+classDef invitations fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 ```
 _Diagram showing an example layout of group-related feeds. Note that the shards in your
 use-case will likely not be those shown, see how they are determined below._
 
 
-### The invitations feed
+### 1. The invitations feed
 
-This feed holds messages which help peers join groups (e.g. `group/add-member`, `group/registration` messages).
-This feed MUST be unique for each peer (a singleton).
-Each peer A who replicates the root metafeed of another B SHOULD also replicate B's invitation feed. 
+The purpose of this feed is to hold messages for coordination of joining groups.
 
-The invitations feed MUST be a direct subfeed of a shard feed, where the shard is derived using the string `"invitations"`.
-The `metafeeds/add/derived` message announcing the invitations feed MUST have `feedpurpose` equal to `"invitations"`,
-and MUST NOT be encrypted. The feed format for the invitations feed MUST be `classic`.
+- 1.1 Each peer running this spec MUST have an invitations feed
+- 1.2 For each peer, the invitations feed MUST be a direct subfeed of a shard feed where 
+  - the shard feed containing the invitations feed MUST be derived from the string `"invitations"` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
+  - the `metafeeds/add/derived` message announcing the invitations feed MUST have
+      - `feedpurpose` equal to `"invitations"`,
+      - the feed format MUST be `classic`
+      - `metadata` equal to `{ directMessage: public }` where
+          - `public` is the base64 encoded public part of a curve25519 Diffie-Hellman keypair
+  - the `metafeeds/add/derived` message announcing the invitations feed MUST NOT be encrypted
+- 1.3 The invitations feed must be a singleton and MUST NOT be tombstoned
+  - this feed represents the record of all people joining each group and must not be lost
+- 1.4 You MUST replicate each other peers invitations feed
+- 1.5 All content on the invitations feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
 
-The shard feed containing the invitations feed MUST be derived from the string `invitations` according to the 
-v1 tree structure specified in [ssb-meta-feeds-spec].
+the shared key used for encryption must follow the [ssb-meta-dm-spec] (TODO)
 
-All content on the invitations feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
+### 2. Group feeds
 
-### Group feeds
+The purpose of this feed is to hold the groups messages.
 
+- 2.1
 Each group feed MUST be a direct subfeed of a shard feed, where the shard is derived using the base64 encoded 
 group secret (which has 32 bytes of entropy). When the group feed is declared on the shard feed, the 
 `metafeed/add/derived` message MUST have the field `feedpurpose` equal to the same base64 encoded group secret.
@@ -260,11 +274,65 @@ derived with information Staltz is aware of.
 Arj now wants to invite Mix to the "helsinki" group. He follows the same pattern as in (2), but now as the inviter.
 
 Mix knows Arj is a part of the group because he was invited by them.
+<<<<<<< Updated upstream
 Mix also knows Staltz is part of the group because all `group/add-member` messages have
+=======
+Mix also knows staltz is part of the group because all `group/add-member` messages have
+```
+recps: [groupId, groupCreatorId, ...inviteeIds]
+```
+_As long as we know the creator we can always re-follow the chain of group-additions._
+
+:fire: TODO - we need to write the group spec up with these changes clearly somewhere.
+
+Staltz see Arj has invited Mix because he's replicating Arj's "invitations" feed, so Statlz starts replicating Mix.
+
+
+
+## Questions
+
+2. same problem as (1) exists when people join a group - they're going to start all asking for the same pattern
+of feeds (e.g. "can I have staltz/v1/d4/helsinki and arj/v1/c/helsinki"). It's like a fingerprint...
+
+---
+
+Existing work to be ported in:
+1. [2022-06-02 meeting](./2022-06-02-notes.md) - has good steps for how discovery works
+2. [2022-07-06 meeting](./2022-07-06-notes.md)
+
+
+>>>>>>> Stashed changes
 
 Staltz can see Arj has invited Mix because he's replicating Arj's "invitations" feed, so Staltz starts replicating Mix's group feed.
 
 <!-- References -->
 
+<<<<<<< Updated upstream
 [ssb-meta-feeds-spec]: https://github.com/ssbc/ssb-meta-feeds-spec
 [box2]: https://github.com/ssbc/envelope-spec/
+=======
+
+<!-- CSS -->
+<style>
+  .invitations, .group {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+  }
+  .invitations { background: #BF2669; }
+  .group { background: #702A8C; }
+
+  details > summary {
+    color: grey;
+    font-size: 12px
+  }
+  details > div {
+    font-style: italic;
+    background: #eee;
+
+    padding: 14px 10px;
+    border-left: 3px solid #999;
+    margin-left: 10px;
+  }
+</style>
+>>>>>>> Stashed changes
