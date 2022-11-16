@@ -90,30 +90,69 @@ use-case will likely not be those shown, see how they are determined below._
 The purpose of this feed is to hold messages for coordination of joining groups.
 
 - 1.1 Each peer running this spec MUST have an invitations feed
-- 1.2 For each peer, the invitations feed MUST be a direct subfeed of a shard feed where 
-  - the shard feed containing the invitations feed MUST be derived from the string `"invitations"` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
-  - the `metafeeds/add/derived` message announcing the invitations feed MUST have
-      - `feedpurpose` equal to `"invitations"`,
-      - the feed format MUST be `classic`
-      - `metadata` equal to `{ directMessage: public }` where
-          - `public` is the base64 encoded public part of a curve25519 Diffie-Hellman keypair
-  - the `metafeeds/add/derived` message announcing the invitations feed MUST NOT be encrypted
-- 1.3 The invitations feed must be a singleton and MUST NOT be tombstoned
+- 1.2 Each peer MUST deterministically place their invitations feed as a subfeed, such that:
+  - their invitations feed is a direct subfeed of a shard feed
+  - the shard feed is a subfeed of the v1 subfeed, and derived from the string `"invitations"` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
+  - the `metafeeds/add/derived` message announcing the invitations feed
+      - MUST have `feedpurpose` equal to `"invitations"`,
+      - MUST be of feed format `classic`
+      - MUST have `metadata` equal to `{ directMessage: publicKey }` where
+          - `publicKey` is the base64 encoded public part of a curve25519 Diffie-Hellman keypair
+      - MUST NOT be encrypted
+- 1.3 You MUST replicate each other peers invitations feed
+- 1.4 All content on the invitations feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
+  - see details below
+- 1.5 The invitations feed must be a singleton and MUST NOT be tombstoned
   - this feed represents the record of all people joining each group and must not be lost
-- 1.4 You MUST replicate each other peers invitations feed
-- 1.5 All content on the invitations feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
 
-the shared key used for encryption must follow the [ssb-meta-dm-spec] (TODO)
+#### `group/add-member` messages
+
+This is the only type of message currently expected in the invitations feed.
+It's defined in the [private-group-spec] to look like this:
+
+```js
+{
+  type: 'group/add-member',
+  version: 'v2',
+
+  root: 'ssb:message/classic/THxjTGPuXvvxnbnAV7xVuVXdhDcmoNtDDN0j3UTxcd8=',
+  secret: '3YUat1ylIUVGaCjotAvof09DhyFxE8iGbF6QxLlCWWc=',
+
+  recps: [
+    'ssb:identity/group/vof09Dhy3YUat1ylIUVGaCjotAFxE8iGbF6QxLlCWWc=',    // group_id
+    'ssb:feed/bendybutt-v1/YXkE3TikkY4GFMX3lzXUllRkNTbj5E-604AkaO1xbz8=', // feed_id
+  ],
+
+  tangles: {
+    group: {
+      // ...
+    },
+    members: {
+      // ...
+    }
+  }
+}
+```
+
+The important parts of this message are:
+- which group this is for (this is covered by the `root` and `secret`)
+- who it's encrypted to (the group, and the feed(s) of people being added)
+
+The encryption of this message MUST follow the the [ssb-meta-dm-spec].
 
 ### 2. Group feeds
 
 The purpose of this feed is to hold the groups messages.
 
-- 2.1
-Each group feed MUST be a direct subfeed of a shard feed, where the shard is derived using the base64 encoded 
-group secret (which has 32 bytes of entropy). When the group feed is declared on the shard feed, the 
-`metafeed/add/derived` message MUST have the field `feedpurpose` equal to the same base64 encoded group secret.
-This message MUST be encrypted with the group secret following the [box2] method.
+- 1.1 Each peer that is a member of a group MUST have a group feed for that group
+- 1.2 Each peer MUST deterministically place their group feed as a subfeed, such that:
+  - their group feed is a direct subfeed of a shard feed
+  - the shard feed is a subfeed of the v1 subfeed, and derived from the base64 encoded string of the group secret key `secret` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
+  - the `metafeeds/add/derived` message announcing the group feed
+      - MUST have `feedpurpose` equal to the base64 encoded group secret
+      - MUST be encrypted with the group secret, using [box2] encryption
+- 1.3 You MUST replicate the each other peers group feed
+- 1.4 All content on the group feed MUST be encrypted with the group secret key, using [box2] encryption, also known as "envelope spec".
 
 
 <details>
@@ -274,65 +313,13 @@ derived with information Staltz is aware of.
 Arj now wants to invite Mix to the "helsinki" group. He follows the same pattern as in (2), but now as the inviter.
 
 Mix knows Arj is a part of the group because he was invited by them.
-<<<<<<< Updated upstream
 Mix also knows Staltz is part of the group because all `group/add-member` messages have
-=======
-Mix also knows staltz is part of the group because all `group/add-member` messages have
-```
-recps: [groupId, groupCreatorId, ...inviteeIds]
-```
-_As long as we know the creator we can always re-follow the chain of group-additions._
-
-:fire: TODO - we need to write the group spec up with these changes clearly somewhere.
-
-Staltz see Arj has invited Mix because he's replicating Arj's "invitations" feed, so Statlz starts replicating Mix.
-
-
-
-## Questions
-
-2. same problem as (1) exists when people join a group - they're going to start all asking for the same pattern
-of feeds (e.g. "can I have staltz/v1/d4/helsinki and arj/v1/c/helsinki"). It's like a fingerprint...
-
----
-
-Existing work to be ported in:
-1. [2022-06-02 meeting](./2022-06-02-notes.md) - has good steps for how discovery works
-2. [2022-07-06 meeting](./2022-07-06-notes.md)
-
-
->>>>>>> Stashed changes
 
 Staltz can see Arj has invited Mix because he's replicating Arj's "invitations" feed, so Staltz starts replicating Mix's group feed.
 
+
 <!-- References -->
-
-<<<<<<< Updated upstream
 [ssb-meta-feeds-spec]: https://github.com/ssbc/ssb-meta-feeds-spec
+[private-group-spec]: https://github.com/ssbc/private-group-spec
+[ssb-meta-dm-spec]: https://github.com/ssbc/ssb-meta-dm-spec
 [box2]: https://github.com/ssbc/envelope-spec/
-=======
-
-<!-- CSS -->
-<style>
-  .invitations, .group {
-    width: 14px;
-    height: 14px;
-    border-radius: 2px;
-  }
-  .invitations { background: #BF2669; }
-  .group { background: #702A8C; }
-
-  details > summary {
-    color: grey;
-    font-size: 12px
-  }
-  details > div {
-    font-style: italic;
-    background: #eee;
-
-    padding: 14px 10px;
-    border-left: 3px solid #999;
-    margin-left: 10px;
-  }
-</style>
->>>>>>> Stashed changes
