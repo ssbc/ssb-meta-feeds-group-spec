@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2022 Mix Irving
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# ssb-meta-feed-group-spec
+# ssb-meta-group-spec
 
 Version: 1.0
 
