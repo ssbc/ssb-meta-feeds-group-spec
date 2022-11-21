@@ -52,7 +52,7 @@ interpreted as described in [RFC 2119](https://tools.ietf.org/html/rfc2119).
 This work builds on the [ssb-meta-feeds-spec] (v1).
 
 We define two types of feeds that each peer will have:
-1. An `invitations` feed
+1. A `group/additions` feed
 2. A "group feed" for each group
 
 ```mermaid
@@ -61,38 +61,36 @@ graph TB
 root(root)
 v1(v1)
 5(5) & b(b) & f(f)
-invitations(invitations):::groupInvite
+additions(group/additions):::additionsClass
 aalborg(aalborg):::group
 helsinki(helsinki):::group
 wellington(wellington):::group
 
 root --> v1 --> 5 --> helsinki
-         v1 --> b --> invitations
+         v1 --> b --> additions
          v1 --> f --> aalborg
                 f --> wellington
 
 classDef default stroke:none;
-classDef groupInvite fill: #BF2669, stroke:none, color:white;
+classDef additionsClass fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 ```
 _Diagram showing an example layout of group-related feeds. Note that the shards in your
 use-case will likely not be those shown, see how they are determined below._
 
 
-### The invitations feed
+### The additions feed
 
 This feed holds messages which help peers join groups (e.g. `group/add-member`, `group/registration` messages).
 This feed MUST be unique for each peer (a singleton).
-Each peer A who replicates the root metafeed of another B SHOULD also replicate B's invitation feed. 
+Each peer A who replicates the root metafeed of another B SHOULD also replicate B's additions feed. 
 
-The invitations feed MUST be a direct subfeed of a shard feed, where the shard is derived using the string `"invitations"`.
-The `metafeeds/add/derived` message announcing the invitations feed MUST have `feedpurpose` equal to `"invitations"`,
-and MUST NOT be encrypted. The feed format for the invitations feed MUST be `classic`.
-
-The shard feed containing the invitations feed MUST be derived from the string `invitations` according to the 
+The additions feed MUST be a direct subfeed of a shard feed, where the shard is derived using the string `group/additions` according to the 
 v1 tree structure specified in [ssb-meta-feeds-spec].
+The `metafeeds/add/derived` message announcing the additions feed MUST have `feedpurpose` equal to `group/additions`,
+and MUST NOT be encrypted. The feed format for the additions feed MUST be `classic`.
 
-All content on the invitations feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
+All content on the additions feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
 
 ### Group feeds
 
@@ -136,12 +134,12 @@ For sympathetic replication we will therefore need a distinct type of announce m
 ### 1. Creating a group
 
 Staltz starts up his application.
-We assume he has already created his `invitations` feed (following the spec above).
+We assume he has already created his `group/additions` feed (following the spec above).
 In his application he creates a new "helsinki" group, which means he:
 1. Creates a new symmetric `groupKey`, also known as "group secret"
 2. Creates a content feed under some shard (using the `groupKey` following the spec above)
 3. Publishes a box2-encrypted `group/init` message on that new "helsinki" content feed
-4. Publishes a box2-encrypted `group/add-member` message on his "invitations" feed
+4. Publishes a box2-encrypted `group/add-member` message on his "group/additions" feed
       <details>
         <summary>details</summary>
         <div>
@@ -156,16 +154,16 @@ root(root)
 v1(v1)
 4(4)
 d(d)
-invitations(invitations):::invitationsClass
+additions(group/additions):::additionsClass
 helsinki(helsinki):::group
 
 subgraph Staltz
   root --> v1 --> 4 --> helsinki
-           v1 --> d --> invitations
+           v1 --> d --> additions
 end
 
 classDef default stroke:none;
-classDef invitationsClass fill: #BF2669, stroke:none, color:white;
+classDef additionsClass fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 ```
 _Diagram showing Staltz feed state from his perspective_
@@ -173,11 +171,11 @@ _Diagram showing Staltz feed state from his perspective_
 ### 2. Group creator invites someone
 
 Staltz wants to invite his friend Arj to the group he set up, so he publishes a `group/add-member` message
-(which contains the group `secret`) on his "invitations" feed.
+(which contains the group `secret`) on his "group/additions" feed.
 
 When Arj next starts up his application and replicates Staltz's feed tree (they are friends), he discovers
-the new `group/add-member` for him on Staltz's "invitations" feed (because peers must replicate their friends'
-"invitations" feeds).
+the new `group/add-member` for him on Staltz's "group/additions" feed (because peers must replicate their friends'
+"group/additions" feeds).
 
 ```mermaid
 graph TB
@@ -186,25 +184,25 @@ rootA(root)
 v1A(v1)
 4A(4):::unreplicated
 dA(d)
-invitationsA(invitations):::invitationsClass
+additionsA(group/additions):::additionsClass
 helsinkiA(helsinki):::unreplicated
 
 rootB(root)
 v1B(v1)
 9B(9)
-invitationsB(invitations):::invitationsClass
+additionsB(group/additions):::additionsClass
 
 subgraph Staltz
   rootA --> v1A --> 4A --> helsinkiA
-            v1A --> dA --> invitationsA
+            v1A --> dA --> additionsA
 end
 
 subgraph Arj
-  rootB --> v1B --> 9B --> invitationsB
+  rootB --> v1B --> 9B --> additionsB
 end
 
 classDef default stroke:none;
-classDef invitationsClass fill: #BF2669, stroke:none, color:white;
+classDef additionsClass fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 classDef unreplicated opacity: 0.4, stroke: none;
 ```
@@ -223,27 +221,27 @@ graph TB
 rootA(root)
 v1A(v1)
 4A(4) & dA(d)
-invitationsA(invitations):::invitationsClass
+additionsA(group/additions):::additionsClass
 helsinkiA(helsinki):::group
 
 rootB(root)
 v1B(v1)
 9B(9) & cB(c)
-invitationsB(invitations):::invitationsClass
+additionsB(group/additions):::additionsClass
 helsinkiB(helsinki):::group
 
 subgraph Staltz
   rootA --> v1A --> 4A --> helsinkiA
-            v1A --> dA --> invitationsA
+            v1A --> dA --> additionsA
 end
 
 subgraph Arj
-  rootB --> v1B --> 9B --> invitationsB
+  rootB --> v1B --> 9B --> additionsB
             v1B --> cB --> helsinkiB
 end
 
 classDef default stroke:none;
-classDef invitationsClass fill: #BF2669, stroke:none, color:white;
+classDef additionsClass fill: #BF2669, stroke:none, color:white;
 classDef group fill: #702A8C, stroke: none, color:white;
 ```
 
@@ -262,7 +260,7 @@ Arj now wants to invite Mix to the "helsinki" group. He follows the same pattern
 Mix knows Arj is a part of the group because he was invited by them.
 Mix also knows Staltz is part of the group because all `group/add-member` messages have
 
-Staltz can see Arj has invited Mix because he's replicating Arj's "invitations" feed, so Staltz starts replicating Mix's group feed.
+Staltz can see Arj has invited Mix because he's replicating Arj's "group/additions" feed, so Staltz starts replicating Mix's group feed.
 
 <!-- References -->
 
