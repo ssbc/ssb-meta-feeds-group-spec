@@ -41,7 +41,7 @@ interpreted as described in [RFC 2119](https://tools.ietf.org/html/rfc2119).
 1. **Group membership should be opaque**
    - You shouldn't be able to guess who is in a group using public info, such as:
      - Shard feeds
-     - `groupId` as a "cloaked message ID"
+     - `groupId` (as ssb-uri)
 2. **Peers should replicate sympathetically**
    - If a friend has a subfeed dedicated to a group, but I don't belong to that group, it is RECOMMENDED that I replicate that subfeed
    - May be randomized or subject to sympathy-related parameters
@@ -90,7 +90,7 @@ v1 tree structure specified in [ssb-meta-feeds-spec].
 The `metafeeds/add/derived` message announcing the additions feed MUST have `feedpurpose` equal to `group/additions`,
 and MUST NOT be encrypted. The feed format for the additions feed MUST be `classic`.
 
-All content on the additions feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
+`group/add-member` messages on the additions feed MUST follow the the [ssb-meta-feeds-dm-spec].
 
 ### Group feeds
 
@@ -266,3 +266,5 @@ Staltz can see Arj has invited Mix because he's replicating Arj's "group/additio
 
 [ssb-meta-feeds-spec]: https://github.com/ssbc/ssb-meta-feeds-spec
 [box2]: https://github.com/ssbc/envelope-spec/
+[pivate-group-spec]: https://github.com/ssbc/private-group-spec
+[ssb-meta-feeds-dm-spec]: https://github.com/ssbc/ssb-meta-feeds-dm-spec
