@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2022 Mix Irving
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# ssb-meta-group-spec
+# ssb-meta-feeds-group-spec
 
 Version: 1.0
 
@@ -321,5 +321,5 @@ Staltz can see Arj has invited Mix because he's replicating Arj's "group/additio
 <!-- References -->
 [ssb-meta-feeds-spec]: https://github.com/ssbc/ssb-meta-feeds-spec
 [private-group-spec]: https://github.com/ssbc/private-group-spec
-[ssb-meta-dm-spec]: https://github.com/ssbc/ssb-meta-dm-spec
+[ssb-meta-feeds-dm-spec]: https://github.com/ssbc/ssb-meta-feeds-dm-spec
 [box2]: https://github.com/ssbc/envelope-spec/
