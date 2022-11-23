@@ -14,17 +14,23 @@ License: This work is licensed under a Creative Commons Attribution 4.0 Internat
 
 ## Abstract
 
-In order to support partial replication, it is desireable to put different 
-group content in different subfeeds. However, we need to have a clear way to 
-discover how you've been invited to a group, without replicating the whole 
-group's content. We also need to consider how to ensure our group data is 
-replicated _enough_ so it's readily available for anyone who needs access to 
-it. For example, if a group contains only three people, and if only two people
-have copies of the group data, then there's little or no gossip propagation, 
-and the third member can only get updates when it is directly connected one of 
-the other two members. Thus we need to enable *sympathetic replication*, such 
-that peers who don't strictly need the group content are incentivized to 
-replicate it anyway.
+With the introduction of groups, there will be a lot more content that is not publicly accessible.
+This could cause onboarding and storage problems.
+
+## Solution: Groups in sub-feeds
+
+If we put each group's content in a different sub-feed, then peers can fetch only the sub-feeds
+which are relevant to them. i.e. If you're not part of a group, you can choose not to replicate it!
+(Metafeeds is one way we can support "partial replication".)
+
+## New Problems
+
+Hosting groups on their own sub-feeds introduces new problems:
+- how do I know if I've been invited to a group (which feed are invites in)
+- once I'm invited to a group, how do I know which sub-feed to publish to?
+- if peers only replicate groups they're in, will there be enough _gossip_ to sustain discourse?
+  - e.g. in the extreme case where a group is just me and a friend using only ssb-room tunnels, updates will only propogate if both my and my friend are online at the same time ):
+  - _see : "sympathetic replication"_
 
 This document specifies how group content is organized in a metafeed tree, what
 data must be encrypted and to whom, and how peers replicate group-related 
