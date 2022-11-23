@@ -79,26 +79,72 @@ _Diagram showing an example layout of group-related feeds. Note that the shards 
 use-case will likely not be those shown, see how they are determined below._
 
 
-### The additions feed
+### 1. The additions feed
 
-This feed holds messages which help peers join groups (e.g. `group/add-member`, `group/registration` messages).
-This feed MUST be unique for each peer (a singleton).
-Each peer A who replicates the root metafeed of another B SHOULD also replicate B's additions feed. 
+The purpose of this feed is to hold messages for coordination of joining groups.
 
-The additions feed MUST be a direct subfeed of a shard feed, where the shard is derived using the string `group/additions` according to the 
-v1 tree structure specified in [ssb-meta-feeds-spec].
-The `metafeeds/add/derived` message announcing the additions feed MUST have `feedpurpose` equal to `group/additions`,
-and MUST NOT be encrypted. The feed format for the additions feed MUST be `classic`.
+- 1.1 Each peer running this spec MUST have an invitations feed
+- 1.2 Each peer MUST deterministically place their invitations feed as a subfeed, such that:
+  - their invitations feed is a direct subfeed of a shard feed
+  - the shard feed is a subfeed of the v1 subfeed, and derived from the string `"group/additions"` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
+  - the `metafeeds/add/derived` message announcing the additions feed
+      - MUST have `feedpurpose` equal to `"group/additions"`,
+      - MUST be of feed format `classic`
+      - MUST have `metadata` equal to `{ directMessage: publicKey }` where
+          - `publicKey` is the base64 encoded public part of a curve25519 Diffie-Hellman keypair
+      - MUST NOT be encrypted
+- 1.3 You MUST replicate each other peers invitations feed
+- 1.4 All content on the invitations feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
+  - see details below
+- 1.5 The invitations feed must be a singleton and MUST NOT be tombstoned
+  - this feed represents the record of all people joining each group and must not be lost
 
-`group/add-member` messages on the additions feed MUST follow the the [ssb-meta-feeds-dm-spec].
+#### `group/add-member` messages
 
-### Group feeds
+This is the only type of message currently expected in the invitations feed.
+It's defined in the [private-group-spec] to look like this:
+
+```js
+{
+  type: 'group/add-member',
+  version: 'v2',
+  root: 'ssb:message/classic/THxjTGPuXvvxnbnAV7xVuVXdhDcmoNtDDN0j3UTxcd8=',
+  secret: '3YUat1ylIUVGaCjotAvof09DhyFxE8iGbF6QxLlCWWc=',
+  recps: [
+    'ssb:identity/group/vof09Dhy3YUat1ylIUVGaCjotAFxE8iGbF6QxLlCWWc=',    // group_id
+    'ssb:feed/bendybutt-v1/YXkE3TikkY4GFMX3lzXUllRkNTbj5E-604AkaO1xbz8=', // feed_id
+  ],
+  tangles: {
+    group: {
+      // ...
+    },
+    members: {
+      // ...
+    }
+  }
+}
+```
+
+The important parts of this message are:
+- which group this is for (this is covered by the `root` and `secret`)
+- who it's encrypted to (the group, and the feed(s) of people being added)
+
+The encryption of this message MUST follow the the [ssb-meta-dm-spec].
+
+### 2. Group feeds
+
+The purpose of this feed is to hold the groups messages.
 
 Each group feed MUST be a direct subfeed of a shard feed, where the shard is derived using the base64 encoded 
-group secret (which has 32 bytes of entropy). When the group feed is declared on the shard feed, the 
-`metafeed/add/derived` message MUST have the field `feedpurpose` equal to the same base64 encoded group secret.
-This message MUST be encrypted with the group secret following the [box2] method.
-
+- 2.1 Each peer that is a member of a group MUST have a group feed for that group
+- 2.2 Each peer MUST deterministically place their group feed as a subfeed, such that:
+  - their group feed is a direct subfeed of a shard feed
+  - the shard feed is a subfeed of the v1 subfeed, and derived from the base64 encoded string of the group secret key `secret` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
+  - the `metafeeds/add/derived` message announcing the group feed
+      - MUST have `feedpurpose` equal to the base64 encoded group secret
+      - MUST be encrypted with the group secret, using [box2] encryption
+- 2.3 You MUST replicate the each other peers group feed
+- 2.4 All content on the group feed MUST be encrypted with the group secret key, using [box2] encryption, also known as "envelope spec".
 
 <details>
   <summary>Details about the shard feed</summary>
@@ -110,7 +156,7 @@ We cannot use the group `id`, as this is publicly known, which would give attack
 We choose the the group `secret` because it is a value known only to those already in the group.
   </div>
 </details>
-    
+
 <details>
   <summary>Details about the group feed</summary>
   <div>
