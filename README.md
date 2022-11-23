@@ -144,15 +144,15 @@ The encryption of this message MUST follow the the [ssb-meta-dm-spec].
 
 The purpose of this feed is to hold the groups messages.
 
-- 1.1 Each peer that is a member of a group MUST have a group feed for that group
-- 1.2 Each peer MUST deterministically place their group feed as a subfeed, such that:
+- 2.1 Each peer that is a member of a group MUST have a group feed for that group
+- 2.2 Each peer MUST deterministically place their group feed as a subfeed, such that:
   - their group feed is a direct subfeed of a shard feed
   - the shard feed is a subfeed of the v1 subfeed, and derived from the base64 encoded string of the group secret key `secret` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
   - the `metafeeds/add/derived` message announcing the group feed
       - MUST have `feedpurpose` equal to the base64 encoded group secret
       - MUST be encrypted with the group secret, using [box2] encryption
-- 1.3 You MUST replicate the each other peers group feed
-- 1.4 All content on the group feed MUST be encrypted with the group secret key, using [box2] encryption, also known as "envelope spec".
+- 2.3 You MUST replicate the each other peers group feed
+- 2.4 All content on the group feed MUST be encrypted with the group secret key, using [box2] encryption, also known as "envelope spec".
 
 
 <details>
