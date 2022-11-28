@@ -101,7 +101,7 @@ The purpose of this feed is to hold messages for coordination of joining groups.
 
 #### `group/add-member` messages
 
-This is the only type of message currently expected in the invitations feed.
+This is the only type of message currently expected in the additions feed.
 It's defined in the [private-group-spec] to look like this:
 
 ```js
@@ -129,7 +129,8 @@ The important parts of this message are:
 - which group this is for (this is covered by the `root` and `secret`)
 - who it's encrypted to (the group, and the feed(s) of people being added)
 
-The encryption of this message MUST follow the the [ssb-meta-dm-spec].
+The encryption of this message on the additions feed MUST follow the 
+[ssb-meta-feeds-dm-spec].
 
 ### 2. Group feeds
 
