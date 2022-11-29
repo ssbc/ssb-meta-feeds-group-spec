@@ -144,7 +144,7 @@ Each group feed MUST be a direct subfeed of a shard feed, where the shard is der
   - the `metafeeds/add/derived` message announcing the group feed
       - MUST have `feedpurpose` equal to the base64 encoded group secret
       - MUST be encrypted with the group secret, using [box2] encryption
-- 2.3 You MUST replicate the each other peers group feed
+- 2.3 Each group member SHOULD replicate the group feeds of all other known group members
 - 2.4 All content on the group feed MUST be encrypted with the group secret key, using [box2] encryption, also known as "envelope spec".
 
 <details>
