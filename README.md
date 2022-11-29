@@ -86,7 +86,7 @@ The purpose of this feed is to hold messages for coordination of joining groups.
 - 1.1 Each peer running this spec MUST have an additions feed
 - 1.2 Each peer MUST deterministically place their additions feed as a subfeed, such that:
   - Their additions feed is a direct subfeed of a shard feed
-  - the shard feed is a subfeed of the v1 subfeed, and derived from the string `"group/additions"` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
+  - The shard feed is a subfeed of the v1 subfeed, and derived from the string `group/additions` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
   - the `metafeeds/add/derived` message announcing the additions feed
       - MUST have `feedpurpose` equal to `"group/additions"`,
       - MUST be of feed format `classic`
