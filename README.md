@@ -88,7 +88,7 @@ The purpose of this feed is to hold messages for coordination of joining groups.
   - Their additions feed is a direct subfeed of a shard feed
   - The shard feed is a subfeed of the v1 subfeed, and derived from the string `group/additions` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
   - The `metafeeds/add/derived` message announcing the additions feed
-      - MUST have `feedpurpose` equal to `"group/additions"`,
+      - MUST have `feedpurpose` equal to the string `group/additions`,
       - MUST be of feed format `classic`
       - MUST have `metadata` equal to `{ directMessage: publicKey }` where
           - `publicKey` is the base64 encoded public part of a curve25519 Diffie-Hellman keypair
