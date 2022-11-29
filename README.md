@@ -96,7 +96,7 @@ The purpose of this feed is to hold messages for coordination of joining groups.
 - 1.3 If a peer A wants to add another peer B in a group, then A MUST replicate B's additions feed and B must replicate A's additions feed
 - 1.4 All messages published on the additions feed MUST be encrypted with [box2] encryption, also known as "envelope spec".
   - see details below
-- 1.5 The invitations feed must be a singleton and MUST NOT be tombstoned
+- 1.5 There MUST be at most one additions feed per metafeed tree
   - this feed represents the record of all people joining each group and must not be lost
 
 #### `group/add-member` messages
