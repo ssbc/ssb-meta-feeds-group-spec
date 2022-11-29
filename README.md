@@ -83,7 +83,7 @@ use-case will likely not be those shown, see how they are determined below._
 
 The purpose of this feed is to hold messages for coordination of joining groups.
 
-- 1.1 Each peer running this spec MUST have an invitations feed
+- 1.1 Each peer running this spec MUST have an additions feed
 - 1.2 Each peer MUST deterministically place their invitations feed as a subfeed, such that:
   - their invitations feed is a direct subfeed of a shard feed
   - the shard feed is a subfeed of the v1 subfeed, and derived from the string `"group/additions"` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
