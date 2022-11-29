@@ -137,7 +137,7 @@ The encryption of this message on the additions feed MUST follow the
 The purpose of this feed is to hold the groups messages.
 
 Each group feed MUST be a direct subfeed of a shard feed, where the shard is derived using the base64 encoded 
-- 2.1 Each peer that is a member of a group MUST have a group feed for that group
+- 2.1 Each peer that is a member of a group MAY have a group feed for that group
 - 2.2 Each peer MUST deterministically place their group feed as a subfeed, such that:
   - their group feed is a direct subfeed of a shard feed
   - the shard feed is a subfeed of the v1 subfeed, and derived from the base64 encoded string of the group secret key `secret` according to the v1 tree structure specified in [ssb-meta-feeds-spec].
