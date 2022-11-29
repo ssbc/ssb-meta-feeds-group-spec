@@ -94,33 +94,17 @@ messages encrypted with [envelope-spec] encryption
 #### `group/add-member` messages
 
 This is the only type of message currently expected in the additions feed.
-It's defined in the [private-group-spec] to look like this:
+It's defined in the [private-group-spec] and MUST have at least the following
+fields in its message `content`:
 
-```js
-{
-  type: 'group/add-member',
-  version: 'v2',
-  root: 'ssb:message/classic/THxjTGPuXvvxnbnAV7xVuVXdhDcmoNtDDN0j3UTxcd8=',
-  secret: '3YUat1ylIUVGaCjotAvof09DhyFxE8iGbF6QxLlCWWc=',
-  recps: [
-    'ssb:identity/group/vof09Dhy3YUat1ylIUVGaCjotAFxE8iGbF6QxLlCWWc=',    // group_id
-    'ssb:feed/bendybutt-v1/YXkE3TikkY4GFMX3lzXUllRkNTbj5E-604AkaO1xbz8=', // feed_id
-  ],
-  tangles: {
-    group: {
-      // ...
-    },
-    members: {
-      // ...
-    }
-  }
-}
-```
-
-The important parts of this message are:
-
-- Which group this is for (this is covered by the `root` and `secret`)
-- Who it's encrypted to (the group, and the feed(s) of people being added)
+- `type` property equal to the string "`group/add-member`"
+- `groupKey` property equal to the base64-encoded string of the group secret key
+- `root` property equal to the ID of the `group/init` message
+- `recps` property containing an array of feed IDs
+  - The first feed ID MUST be the ID of the group feed, as a
+  `ssb:identity/group/` URI
+  - The subsequent feed IDs (at most 15 of them) MUST be the ID of peer(s) being
+  added to the group
 
 The encryption of this message on the additions feed MUST follow the
 [ssb-meta-feeds-dm-spec].
