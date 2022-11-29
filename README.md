@@ -409,15 +409,15 @@ overall simple to implement.
 A group feed is discoverable only by the group members, because its announcement
 is encrypted. However, an eavesdropper who can replicate a peer's metafeed tree
 will notice the presence of these encrypted message on shard feeds. If the
-eavesdropper can do that for several peers, then they may perform an analysis
-attack where they try to correlate the encrypted messages on the shard feeds to
-the group members.
+eavesdropper can do that for several peers, then they may perform a metadata
+analysis attack where they try to correlate the encrypted messages on the shard
+feeds to the group members.
 
 This can be mitigated by publishing dummy encrypted messages on the shard feed
 at random intervals, with the downside of increasing the size of the shard feed,
 and thus making partial replication heavier.
 
-It is currently unknown how much can be learned from such an analysis attack, as
+It is currently unknown how much can be learned from such analysis attack, as
 it depends on the network's complexity, such as number of peers, number of
 groups, and number of relationships between peers.
 
