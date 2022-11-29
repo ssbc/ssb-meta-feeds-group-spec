@@ -380,7 +380,46 @@ Staltz can see Arj has invited Mix because he's replicating Arj's
 
 ## 5. Security Considerations
 
-TBD
+### 5.1. Degraded confidentiality at scale
+
+As noted in the [private-groups-original-notes], SSB Private Groups are based on
+symmetric encryption and static keys (no key rotation), which means it cannot
+guarantee [perfect-forward-secrecy] neither [post-compromise-security]. This
+makes SSB Private Groups less likely to guarantee confidentiality at scale, when
+a group has dozens or hundreds of members. If any of the members leaks the group
+secret, all past communication in the group is compromised.
+
+This also means that any group member can add new members to the group. They may
+even do so without publishing a `group/add-member` message, which effectively
+allows any group member to invite a third party that will remain undetected by
+existing group members.
+
+SSB Private Groups with several members should thus not be considered
+confidential nor forward secret, and should be used with caution. Our security
+model assumes that the group is as trustworthy as the _least_ trustworthy member
+in the group.
+
+The choice of symmetric encryption (as opposed to, e.g. hash-ratchet or
+double-ratchet) was made because of efficiency. Symmetric encryption means
+adding new members or publishing new content is `O(1)` fast, and the system is
+overall simple to implement.
+
+### 5.2. Membership analysis attacks
+
+A group feed is discoverable only by the group members, because its announcement
+is encrypted. However, an eavesdropper who can replicate a peer's metafeed tree
+will notice the presence of these encrypted message on shard feeds. If the
+eavesdropper can do that for several peers, then they may perform a metadata
+analysis attack where they try to correlate the encrypted messages on the shard
+feeds to the group members.
+
+This can be mitigated by publishing dummy encrypted messages on the shard feed
+at random intervals, with the downside of increasing the size of the shard feed,
+and thus making partial replication heavier.
+
+It is currently unknown how much can be learned from such analysis attack, as
+it depends on the network's complexity, such as number of peers, number of
+groups, and number of relationships between peers.
 
 ## 6. References
 
@@ -393,10 +432,12 @@ TBD
 
 ### 6.2. Informative References
 
+- [private-groups-original-notes]
 - [scuttlebutt-protocol-guide]
 - [ssb-private-group-keys]
 - [ssb-tribes2]
 - [ssb-meta-feeds]
+- [perfect-forward-secrecy]
 
 <!-- References -->
 
@@ -408,3 +449,6 @@ TBD
 [ssb-private-group-keys]: https://github.com/ssbc/ssb-private-group-keys
 [ssb-tribes2]: https://github.com/ssbc/ssb-tribes2
 [ssb-meta-feeds]: https://github.com/ssbc/ssb-meta-feeds
+[private-groups-original-notes]: https://github.com/ssbc/envelope-spec/blob/master/original_notes.md
+[perfect-forward-secrecy]: https://en.wikipedia.org/wiki/Forward_secrecy
+[post-compromise-security]: https://ieeexplore.ieee.org/document/7536374
