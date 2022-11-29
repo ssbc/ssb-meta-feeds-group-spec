@@ -93,7 +93,7 @@ The purpose of this feed is to hold messages for coordination of joining groups.
       - MUST have `metadata` equal to `{ directMessage: publicKey }` where
           - `publicKey` is the base64 encoded public part of a curve25519 Diffie-Hellman keypair
       - MUST NOT be encrypted
-- 1.3 You MUST replicate each other peers invitations feed
+- 1.3 If a peer A wants to add another peer B in a group, then A MUST replicate B's additions feed and B must replicate A's additions feed
 - 1.4 All content on the invitations feed SHOULD be encrypted with [box2] encryption, also known as "envelope spec".
   - see details below
 - 1.5 The invitations feed must be a singleton and MUST NOT be tombstoned
