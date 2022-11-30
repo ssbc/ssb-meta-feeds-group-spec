@@ -422,6 +422,14 @@ It is currently unknown how much can be learned from such analysis attack, as
 it depends on the network's complexity, such as number of peers, number of
 groups, and number of relationships between peers.
 
+Another way membership information can leak is through replication requests -
+if only Alice, Bob, and Carol ask for feeds A, B, C, and these feeds don't seem to
+be associated with any publicly declared sub-feeds, it might be reasonable to guess
+that Alice, Bob, Carol are all in a group and that A, B, C are their associated feeds
+for that group. We think this can be mitigated through "sympathetic replication"
+(asking friends who aren't in our groups to replicate some of our group feeds) in order
+to add more noise (and replication resilience) to the system. This needs further
+investigation and specification.
 ## 6. References
 
 ### 6.1. Normative References
