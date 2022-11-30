@@ -98,13 +98,14 @@ It's defined in the [private-group-spec] and MUST have at least the following
 fields in its message `content`:
 
 - `type` property equal to the string "`group/add-member`"
-- `groupKey` property equal to the base64-encoded string of the group secret key
-- `root` property equal to the ID of the `group/init` message
+- `version` property equal to the string "`v2`"
+- `secret` property equal to the base64-encoded string of the group secret key
+- `root` property equal to the ID of the `group/init` message, as an SSB URI
 - `recps` property containing an array of feed IDs
   - The first feed ID MUST be the ID of the group feed, as a
   `ssb:identity/group/` URI
   - The subsequent feed IDs (at most 15 of them) MUST be the ID of peer(s) being
-  added to the group
+  added to the group, all as SSB URIs
 
 The encryption of this message on the additions feed MUST follow the
 [ssb-meta-feeds-dm-spec].
@@ -448,6 +449,7 @@ of peers, number of groups, and number of relationships between peers.
 - [envelope-spec]
 - [private-group-spec]
 - [ssb-meta-feeds-dm-spec]
+- [ssb-uri-spec]
 
 ### 6.2. Informative References
 
@@ -471,3 +473,4 @@ of peers, number of groups, and number of relationships between peers.
 [private-groups-original-notes]: https://github.com/ssbc/envelope-spec/blob/master/original_notes.md
 [perfect-forward-secrecy]: https://en.wikipedia.org/wiki/Forward_secrecy
 [post-compromise-security]: https://ieeexplore.ieee.org/document/7536374
+[ssb-uri-spec]: https://github.com/ssbc/ssb-uri-spec
