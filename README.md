@@ -459,6 +459,7 @@ of peers, number of groups, and number of relationships between peers.
 - [ssb-tribes2]
 - [ssb-meta-feeds]
 - [perfect-forward-secrecy]
+- [post-compromise-security]
 
 <!-- References -->
 
