@@ -414,6 +414,11 @@ eavesdropper can do that for several peers, then they may perform a metadata
 analysis attack where they try to correlate the encrypted messages on the shard
 feeds to the group members.
 
+In the current implementation, we mitigated through how shards are assigned
+per user - because the derivation involves a hash function and a piece of
+content unique to the peer (their root feed id), each peer will have the group
+located in a different shard. This makes it harder to guess which group an 
+announce message was for. 
 This can be mitigated by publishing dummy encrypted messages on the shard feed
 at random intervals, with the downside of increasing the size of the shard feed,
 and thus making partial replication heavier.
