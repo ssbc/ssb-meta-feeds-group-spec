@@ -392,7 +392,8 @@ secret, all past communication in the group is compromised.
 This also means that any group member can add new members to the group. They may
 even do so without publishing a `group/add-member` message, which effectively
 allows any group member to invite a third party that will remain undetected by
-existing group members.
+existing group members. The only signal you might get is that a peer not in the group is asking for
+group leaf feeds that they should not know about.
 
 SSB Private Groups with several members should thus not be considered
 confidential nor forward secret, and should be used with caution. Our security
