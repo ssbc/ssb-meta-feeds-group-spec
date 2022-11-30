@@ -392,13 +392,12 @@ secret, all past communication in the group is compromised.
 This also means that any group member can add new members to the group. They may
 even do so without publishing a `group/add-member` message, which effectively
 allows any group member to invite a third party that will remain undetected by
-existing group members. The only signal you might get is that a peer not in the group is asking for
-group leaf feeds that they should not know about.
+existing group members. The only signal group members may get is that this third
+party is requesting replication for group feeds that they should not know about.
 
-SSB Private Groups with several members should thus not be considered
-confidential nor forward secret, and should be used with caution. Our security
-model assumes that the group is as trustworthy as the _least_ trustworthy member
-in the group.
+SSB Private Groups with several members should thus be used with caution. Our
+security model assumes that the group is as trustworthy as the _least_
+trustworthy member in the group.
 
 The choice of symmetric encryption (as opposed to, e.g. hash-ratchet or
 double-ratchet) was made because of efficiency. Symmetric encryption means
@@ -414,27 +413,33 @@ eavesdropper can do that for several peers, then they may perform a metadata
 analysis attack where they try to correlate the encrypted messages on the shard
 feeds to the group members.
 
-In the current implementation, we mitigated through how shards are assigned
-per user - because the derivation involves a hash function and a piece of
-content unique to the peer (their root feed id), each peer will have the group
-located in a different shard. This makes it harder to guess which group an 
-announce message was for. 
 This can be mitigated by publishing dummy encrypted messages on the shard feed
 at random intervals, with the downside of increasing the size of the shard feed,
 and thus making partial replication heavier.
 
-It is currently unknown how much can be learned from such analysis attack, as
-it depends on the network's complexity, such as number of peers, number of
-groups, and number of relationships between peers.
+Another mitigation, which is covered by this specification and by
+[ssb-meta-feeds-spec], is how shard feeds are derived for each peer. The
+derivation involves a hash function and a piece of metadata unique to the peer,
+which means that group members will have their group feeds located in a
+different shard. This makes it harder for an eavesdropper to correlate the
+encrypted messages on the shard feeds of the peers it is eavesdropping on.
 
-Another way membership information can leak is through replication requests -
-if only Alice, Bob, and Carol ask for feeds A, B, C, and these feeds don't seem to
-be associated with any publicly declared sub-feeds, it might be reasonable to guess
-that Alice, Bob, Carol are all in a group and that A, B, C are their associated feeds
-for that group. We think this can be mitigated through "sympathetic replication"
-(asking friends who aren't in our groups to replicate some of our group feeds) in order
-to add more noise (and replication resilience) to the system. This needs further
-investigation and specification.
+Another way membership information can leak is through replication requests:
+if only Alice, Bob, and Carol request for feeds A, B, C, and if these feeds
+don't seem to be publicly declared in any metafeed tree, it might be reasonable
+for an eavesdropper to guess that Alice, Bob, Carol are all in a group and that
+A, B, C are group feeds. We think this can be mitigated through "sympathetic
+replication". Sympathetic replication involves asking friendly peers who aren't
+in our groups to replicate some of our group feeds. This adds more noise in
+metadata analysis attacks, and makes it harder to guess who is in a group. It
+also improves replication resilience, because there are more peers replicating
+group feeds, making them more available in the network. Sympathetic replication
+needs further investigation and specification.
+
+It is currently unknown how much can be learned from metadata analysis attacks,
+as it depends on these mitigations and the network's complexity, such as number
+of peers, number of groups, and number of relationships between peers.
+
 ## 6. References
 
 ### 6.1. Normative References
