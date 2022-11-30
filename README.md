@@ -104,8 +104,8 @@ fields in its message `content`:
 - `recps` property containing an array of feed IDs
   - The first feed ID MUST be the ID of the group feed, as a
   `ssb:identity/group/` URI
-  - The subsequent feed IDs (at most 15 of them) MUST be the ID of peer(s) being
-  added to the group, all as SSB URIs
+  - The subsequent feed IDs (at most 15 of them) MUST be the root metafeed ID of
+  the peer(s) being added to the group, all as SSB URIs
 
 The encryption of this message on the additions feed MUST follow the
 [ssb-meta-feeds-dm-spec].
