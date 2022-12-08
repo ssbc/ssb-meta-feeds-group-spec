@@ -445,11 +445,11 @@ of peers, number of groups, and number of relationships between peers.
 
 ### 6.1. Normative References
 
-- [ssb-meta-feeds-spec]
-- [envelope-spec]
-- [private-group-spec]
-- [ssb-meta-feeds-dm-spec]
-- [ssb-uri-spec]
+- [ssb-meta-feeds-spec] version 1.0
+- [envelope-spec] version 1.0.0
+- [private-group-spec] version 2.0.0
+- [ssb-meta-feeds-dm-spec] version 0.1
+- [ssb-uri-spec] version 1.3
 
 ### 6.2. Informative References
 
