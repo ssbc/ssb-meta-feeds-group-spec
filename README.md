@@ -131,7 +131,7 @@ a shard feed, such that:
   - The `metafeeds/add/derived` message announcing the group feed
     - MUST have `feedpurpose` equal to the base64 encoded group secret
     - MUST be encrypted with the group secret, using [envelope-spec] encryption
-    - SHOULD be encrypted as well to yourself, for recovery purposes
+    - SHOULD be encrypted as well to your `own_key`, for recovery purposes
 - 3.2.3 Each group member SHOULD replicate the group feeds of all other group
 members they know of
 - 3.2.4 All content on the group feed MUST be encrypted with the group secret
